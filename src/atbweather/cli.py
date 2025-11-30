@@ -1,13 +1,16 @@
 import argparse
 import sys
 from typing import Optional
+import threading
+import time
+import itertools
 
 import requests
 from colorama import init as colorama_init, Fore, Style
 
-BASE_URL = "https://wttr.in"
-
 colorama_init(autoreset=True)
+
+BASE_URL = "https://wttr.in"
 
 
 class WeatherError(Exception):
@@ -15,6 +18,7 @@ class WeatherError(Exception):
     pass
 
 
+# ASCII Banner
 BANNER = r"""
             █████    █████                                         █████    █████                        
            ░░███    ░░███                                         ░░███    ░░███                         
@@ -28,21 +32,37 @@ BANNER = r"""
 
 
 def print_banner() -> None:
-    """Pretty intro banner."""
     print(Fore.GREEN + BANNER)
     print(
-        Fore.GREEN
-        + Style.BRIGHT
-        + "      Simple CLI Weather • Entertainment • Productivity\n"
+        Fore.GREEN + Style.BRIGHT +
+        "      Simple CLI Weather • Productivity\n"
     )
 
 
-def fetch_weather(location: Optional[str] = None) -> dict:
-    """
-    Fetch weather data from wttr.in in JSON format.
+# Spinner class for loading animation
+class Spinner:
+    def __init__(self, message: str = "Fetching weather"):
+        self.message = message
+        self._stop_event = threading.Event()
+        self._thread = threading.Thread(target=self._spin, daemon=True)
 
-    If location is None or empty, wttr.in will detect by IP.
-    """
+    def _spin(self):
+        frames = itertools.cycle(["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"])
+        while not self._stop_event.is_set():
+            symbol = next(frames)
+            print(f"\r{symbol} {self.message}...", end="", flush=True)
+            time.sleep(0.1)
+        print("\r", end="", flush=True)
+
+    def start(self):
+        self._thread.start()
+
+    def stop(self):
+        self._stop_event.set()
+        self._thread.join()
+
+
+def fetch_weather(location: Optional[str] = None) -> dict:
     path = "" if not location else f"/{location}"
     url = f"{BASE_URL}{path}"
     params = {"format": "j1"}
@@ -57,22 +77,19 @@ def fetch_weather(location: Optional[str] = None) -> dict:
         raise WeatherError("Failed to parse JSON from wttr.in") from e
 
     if "current_condition" not in data or not data["current_condition"]:
-        raise WeatherError("Unexpected API response: no current_condition field")
+        raise WeatherError("Unexpected API response format")
 
     return data
 
 
 def format_weather(data: dict, location: Optional[str]) -> str:
-    """Turn JSON data into a human-readable multiline string."""
     curr = data["current_condition"][0]
 
     temp_c = curr.get("temp_C", "?")
     temp_f = curr.get("temp_F", "?")
     feels_c = curr.get("FeelsLikeC", "?")
     feels_f = curr.get("FeelsLikeF", "?")
-    desc_list = curr.get("weatherDesc", [])
-    desc = desc_list[0].get("value") if desc_list else "Unknown"
-
+    desc = curr.get("weatherDesc", [{"value": "Unknown"}])[0]["value"]
     humidity = curr.get("humidity", "?")
     wind_kmph = curr.get("windspeedKmph", "?")
     wind_dir = curr.get("winddir16Point", "?")
@@ -80,32 +97,15 @@ def format_weather(data: dict, location: Optional[str]) -> str:
     visibility = curr.get("visibility", "?")
     obs_time = curr.get("observation_time", "?")
 
-    area_name = None
-    country = None
-    try:
-        nearest_area = data.get("nearest_area", [])[0]
-        names = nearest_area.get("areaName", [])
-        countries = nearest_area.get("country", [])
-        if names:
-            area_name = names[0].get("value")
-        if countries:
-            country = countries[0].get("value")
-    except (IndexError, AttributeError, TypeError):
-        pass
-
-    loc_display = location or area_name or "Your Location"
-    if country and loc_display != country:
-        loc_display = f"{loc_display}, {country}"
+    loc_display = location or "Your Location"
 
     lines = []
     lines.append(f"Weather for: {loc_display}")
     lines.append("-" * len(lines[0]))
-
     lines.append(f"Now:           {desc}")
     lines.append(f"Temperature:   {temp_c}°C  ({temp_f}°F)")
     lines.append(f"Feels like:    {feels_c}°C  ({feels_f}°F)")
     lines.append("")
-
     lines.append(f"Humidity:      {humidity}%")
     lines.append(f"Wind:          {wind_kmph} km/h {wind_dir}")
     lines.append(f"Pressure:      {pressure} hPa")
@@ -124,15 +124,13 @@ def build_parser() -> argparse.ArgumentParser:
             "Examples:\n"
             "  atbweather\n"
             "  atbweather -l Tokyo\n"
-            "  atbweather --location \"Denpasar\"\n"
+            "  atbweather --location \"Atlantico\"\n"
         ),
     )
     parser.add_argument(
-        "-l",
-        "--location",
+        "-l", "--location",
         metavar="LOCATION",
-        help="City/region, e.g. 'Tokyo', 'Denpasar', 'New York'.\n"
-             "If omitted, use IP-based location.",
+        help="City/region (if omitted, auto-detect by IP)",
     )
     return parser
 
@@ -143,15 +141,22 @@ def main(argv=None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
 
+    spinner = Spinner("Fetching weather")
     try:
+        spinner.start()
         data = fetch_weather(args.location)
-        output = format_weather(data, args.location)
-        print()
-        print(output)
+        spinner.stop()
+
+        print()  # newline after spinner
+        print(format_weather(data, args.location))
         return 0
+
     except WeatherError as e:
+        spinner.stop()
         print(f"\nError: {e}", file=sys.stderr)
         return 1
+
     except KeyboardInterrupt:
+        spinner.stop()
         print("\nAborted by user.", file=sys.stderr)
         return 130
