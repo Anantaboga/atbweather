@@ -108,6 +108,17 @@ def format_weather(data: dict, location: Optional[str]) -> str:
     obs_time = curr.get("observation_time", "?")
 
     loc_display = location or "Your Location"
+    try:
+        nearest_area = data.get("nearest_area", [])[0]
+
+        city = nearest_area.get("areaName", [{}])[0].get("value", "")
+        region = nearest_area.get("region", [{}])[0].get("value", "")
+        country = nearest_area.get("country", [{}])[0].get("value", "")
+
+        parts = [p for p in [city, region, country] if p]
+        loc_display = ", ".join(parts) if parts else loc_display
+    except Exception:
+        pass
 
     return (
         f"Weather for: {loc_display}\n"
