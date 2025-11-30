@@ -1,37 +1,59 @@
-# atbweather
+# 🌦 atbweather – Terminal Weather App
+```
+            █████    █████                                         █████    █████                        
+           ░░███    ░░███                                         ░░███    ░░███                         
+  ██████   ███████   ░███████  █████ ███ █████  ██████   ██████   ███████   ░███████    ██████  ████████ 
+ ░░░░░███ ░░░███░    ░███░░███░░███ ░███░░███  ███░░███ ░░░░░███ ░░░███░    ░███░░███  ███░░███░░███░░███
+  ███████   ░███     ░███ ░███ ░███ ░███ ░███ ░███████   ███████   ░███     ░███ ░███ ░███████  ░███ ░░░ 
+ ███░░███   ░███ ███ ░███ ░███ ░░███████████  ░███░░░   ███░░███   ░███ ███ ░███ ░███ ░███░░░   ░███     
+░░████████  ░░█████  ████████   ░░████░████   ░░██████ ░░████████  ░░█████  ████ █████░░██████  █████    
+ ░░░░░░░░    ░░░░░  ░░░░░░░░     ░░░░ ░░░░     ░░░░░░   ░░░░░░░░    ░░░░░  ░░░░ ░░░░░  ░░░░░░  ░░░░░     
+                                                                                                         
+```
+atbweather is a simple yet stylish CLI weather tool that fetches real-time weather data from **wttr.in** — no API key required!  
+Easy to use anywhere.
 
-A tiny terminal weather app using [wttr.in](https://wttr.in) (no API key required).
+---
 
-## Install (local dev)
+## ✨ Features
+
+✔ No API keys needed  
+✔ Supports **custom locations**  
+✔ Detects **location automatically**  
+✔ Works on **Windows, Linux, macOS**  
+✔ Colorful banner intro 😎  
+
+---
+
+## 🛠 Installation
+
+### Install from GitHub (recommended while in development)
 
 ```bash
-  git clone https://github.com/your-username/atbweather.git
-  cd atbweather
-  pip install .
-  # or (recommended for CLIs)
-  pipx install .
+pip install git+https://github.com/Anantaboga/atbweather.git
+```
+### Or with pipx (best for CLI apps):
+```
+pip install --user pipx
+pipx ensurepath
+pipx install git+https://github.com/Anantaboga/atbweather.git
 ```
 
-# Usage
-## Auto-detected location (by IP)
+## 🚀 Usage
+### Auto-detected location (via IP)
+```
 atbweather
+```
+### Specific location
+```
+atbweather -l Atlantico
+atbweather --location "Atlantico"
+```
+### Help
+```
+atbweather -h
+```
 
-## Specific city
-atbweather -l "Denpasar"
-atbweather --location Tokyo
-
-# Requirements
-python 3.9 +
-requests (installed automatically)
-
-`.gitignore` (Python typical):
-
-```gitignore
-__pycache__/
-*.py[cod]
-*.egg-info/
-dist/
-build/
-.env
-venv/
-.venv/
+## 🧩 Requirements
+- Python 3.9+
+- Internet connection
