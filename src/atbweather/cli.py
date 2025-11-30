@@ -8,6 +8,7 @@ import itertools
 import requests
 from colorama import init as colorama_init, Fore, Style
 
+# Initialize colorama for Windows terminals
 colorama_init(autoreset=True)
 
 BASE_URL = "https://wttr.in"
@@ -39,30 +40,37 @@ def print_banner() -> None:
     )
 
 
-# Spinner class for loading animation
 class Spinner:
+    """Spinner that disables automatically if not in a real terminal."""
     def __init__(self, message: str = "Fetching weather"):
         self.message = message
+        self.enabled = sys.stdout.isatty()  # auto disable when output is piped
         self._stop_event = threading.Event()
         self._thread = threading.Thread(target=self._spin, daemon=True)
 
     def _spin(self):
-        frames = itertools.cycle(["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"])
+        frames = itertools.cycle(["⠋", "⠙", "⠹", "⠸",
+                                  "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"])
         while not self._stop_event.is_set():
-            symbol = next(frames)
-            print(f"\r{symbol} {self.message}...", end="", flush=True)
+            if self.enabled:
+                print(
+                    f"\r{next(frames)} {self.message}...",
+                    end="", flush=True
+                )
             time.sleep(0.1)
-        print("\r", end="", flush=True)
 
     def start(self):
-        self._thread.start()
+        if self.enabled:
+            self._thread.start()
 
     def stop(self):
-    self._stop_event.set()
-    self._thread.join()
-    # Clear the spinner line
-    print("\r" + " " * (len(self.message) + 4), end="\r", flush=True)
-    print()
+        self._stop_event.set()
+        if self.enabled:
+            self._thread.join()
+            # Clear spinner line completely
+            clear_len = len(self.message) + 5
+            print("\r" + " " * clear_len, end="\r", flush=True)
+
 
 def fetch_weather(location: Optional[str] = None) -> dict:
     path = "" if not location else f"/{location}"
@@ -75,10 +83,10 @@ def fetch_weather(location: Optional[str] = None) -> dict:
         data = resp.json()
     except requests.exceptions.RequestException as e:
         raise WeatherError(f"Network error: {e}") from e
-    except ValueError as e:
-        raise WeatherError("Failed to parse JSON from wttr.in") from e
+    except ValueError:
+        raise WeatherError("Invalid response from wttr.in")
 
-    if "current_condition" not in data or not data["current_condition"]:
+    if "current_condition" not in data:
         raise WeatherError("Unexpected API response format")
 
     return data
@@ -101,20 +109,18 @@ def format_weather(data: dict, location: Optional[str]) -> str:
 
     loc_display = location or "Your Location"
 
-    lines = []
-    lines.append(f"Weather for: {loc_display}")
-    lines.append("-" * len(lines[0]))
-    lines.append(f"Now:           {desc}")
-    lines.append(f"Temperature:   {temp_c}°C  ({temp_f}°F)")
-    lines.append(f"Feels like:    {feels_c}°C  ({feels_f}°F)")
-    lines.append("")
-    lines.append(f"Humidity:      {humidity}%")
-    lines.append(f"Wind:          {wind_kmph} km/h {wind_dir}")
-    lines.append(f"Pressure:      {pressure} hPa")
-    lines.append(f"Visibility:    {visibility} km")
-    lines.append(f"Observation:   {obs_time} (UTC, from API)")
-
-    return "\n".join(lines)
+    return (
+        f"Weather for: {loc_display}\n"
+        + "-" * (15 + len(loc_display)) + "\n"
+        f"Now:           {desc}\n"
+        f"Temperature:   {temp_c}°C  ({temp_f}°F)\n"
+        f"Feels like:    {feels_c}°C  ({feels_f}°F)\n\n"
+        f"Humidity:      {humidity}%\n"
+        f"Wind:          {wind_kmph} km/h {wind_dir}\n"
+        f"Pressure:      {pressure} hPa\n"
+        f"Visibility:    {visibility} km\n"
+        f"Observation:   {obs_time} (UTC, from API)"
+    )
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -132,7 +138,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "-l", "--location",
         metavar="LOCATION",
-        help="City/region (if omitted, auto-detect by IP)",
+        help="City/region (if omitted, auto-detect by IP)"
     )
     return parser
 
@@ -144,12 +150,12 @@ def main(argv=None) -> int:
     args = parser.parse_args(argv)
 
     spinner = Spinner("Fetching weather")
+
     try:
         spinner.start()
         data = fetch_weather(args.location)
         spinner.stop()
 
-        print()  # newline after spinner
         print(format_weather(data, args.location))
         return 0
 
