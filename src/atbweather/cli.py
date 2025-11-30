@@ -58,9 +58,11 @@ class Spinner:
         self._thread.start()
 
     def stop(self):
-        self._stop_event.set()
-        self._thread.join()
-
+    self._stop_event.set()
+    self._thread.join()
+    # Clear the spinner line
+    print("\r" + " " * (len(self.message) + 4), end="\r", flush=True)
+    print()
 
 def fetch_weather(location: Optional[str] = None) -> dict:
     path = "" if not location else f"/{location}"
