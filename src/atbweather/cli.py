@@ -3,13 +3,38 @@ import sys
 from typing import Optional
 
 import requests
+from colorama import init as colorama_init, Fore, Style
 
 BASE_URL = "https://wttr.in"
+
+colorama_init(autoreset=True)
 
 
 class WeatherError(Exception):
     """Custom error for weather fetching problems."""
     pass
+
+
+BANNER = r"""
+            █████    █████                                         █████    █████                        
+           ░░███    ░░███                                         ░░███    ░░███                         
+  ██████   ███████   ░███████  █████ ███ █████  ██████   ██████   ███████   ░███████    ██████  ████████ 
+ ░░░░░███ ░░░███░    ░███░░███░░███ ░███░░███  ███░░███ ░░░░░███ ░░░███░    ░███░░███  ███░░███░░███░░███
+  ███████   ░███     ░███ ░███ ░███ ░███ ░███ ░███████   ███████   ░███     ░███ ░███ ░███████  ░███ ░░░ 
+ ███░░███   ░███ ███ ░███ ░███ ░░███████████  ░███░░░   ███░░███   ░███ ███ ░███ ░███ ░███░░░   ░███     
+░░████████  ░░█████  ████████   ░░████░████   ░░██████ ░░████████  ░░█████  ████ █████░░██████  █████    
+ ░░░░░░░░    ░░░░░  ░░░░░░░░     ░░░░ ░░░░     ░░░░░░   ░░░░░░░░    ░░░░░  ░░░░ ░░░░░  ░░░░░░  ░░░░░                                                                                                      
+"""
+
+
+def print_banner() -> None:
+    """Pretty intro banner."""
+    print(Fore.GREEN + BANNER)
+    print(
+        Fore.GREEN
+        + Style.BRIGHT
+        + "      Simple CLI Weather • Entertainment • Productivity\n"
+    )
 
 
 def fetch_weather(location: Optional[str] = None) -> dict:
@@ -20,7 +45,7 @@ def fetch_weather(location: Optional[str] = None) -> dict:
     """
     path = "" if not location else f"/{location}"
     url = f"{BASE_URL}{path}"
-    params = {"format": "j1"}  # JSON format
+    params = {"format": "j1"}
 
     try:
         resp = requests.get(url, params=params, timeout=8)
@@ -38,6 +63,7 @@ def fetch_weather(location: Optional[str] = None) -> dict:
 
 
 def format_weather(data: dict, location: Optional[str]) -> str:
+    """Turn JSON data into a human-readable multiline string."""
     curr = data["current_condition"][0]
 
     temp_c = curr.get("temp_C", "?")
@@ -89,32 +115,43 @@ def format_weather(data: dict, location: Optional[str]) -> str:
     return "\n".join(lines)
 
 
-def parse_args(argv=None):
+def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="atbweather - tiny CLI weather app using wttr.in (no API key required)."
+        prog="atbweather",
+        description="atbweather - tiny CLI weather app using wttr.in (no API key required).",
+        formatter_class=argparse.RawTextHelpFormatter,
+        epilog=(
+            "Examples:\n"
+            "  atbweather\n"
+            "  atbweather -l Tokyo\n"
+            "  atbweather --location \"Denpasar\"\n"
+        ),
     )
     parser.add_argument(
         "-l",
         "--location",
         metavar="LOCATION",
-        help="City/region, e.g. 'Tokyo', 'Denpasar', 'New York'. "
+        help="City/region, e.g. 'Tokyo', 'Denpasar', 'New York'.\n"
              "If omitted, use IP-based location.",
     )
-    return parser.parse_args(argv)
+    return parser
 
 
 def main(argv=None) -> int:
-    args = parse_args(argv)
+    print_banner()
+
+    parser = build_parser()
+    args = parser.parse_args(argv)
 
     try:
         data = fetch_weather(args.location)
         output = format_weather(data, args.location)
+        print()
         print(output)
         return 0
     except WeatherError as e:
-        print(f"Error: {e}", file=sys.stderr)
+        print(f"\nError: {e}", file=sys.stderr)
         return 1
     except KeyboardInterrupt:
         print("\nAborted by user.", file=sys.stderr)
         return 130
-
