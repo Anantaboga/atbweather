@@ -14,7 +14,7 @@ authors = [
 ]
 
 dependencies = [
-  "requests>=2.0"
+  "requests>=2.0",
   "colorama>=0.4"
 ]
 
