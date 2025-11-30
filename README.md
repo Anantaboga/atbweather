@@ -32,10 +32,7 @@ Easy to use anywhere.
 ```bash
 pip install git+https://github.com/Anantaboga/atbweather.git
 ```
-or in linux terminal:
-```
-pipx install git+https://github.com/Anantaboga/atbweather.git
-```
+
 ### Or with pipx (best for CLI apps):
 ```
 pip install --user pipx
@@ -62,3 +59,50 @@ atbweather -h
 - Python 3.9+
 - Internet connection
 
+## 🐧 Installation on Linux (Recommended Methods)
+
+Starting with modern Debian/Ubuntu systems, Python packages should not be installed system-wide using `pip`.
+Below are the safest ways to install **ATBWEATHER** on Linux.
+
+---
+
+### ✔ Best Option (Recommended): Install with `pipx`
+
+`pipx` isolates CLI tools into their own environments — clean and safe.
+
+Install pipx:
+```bash
+sudo apt update
+sudo apt install pipx
+pipx ensurepath
+```
+Reload your terminal session:
+```
+source ~/.profile
+```
+Install ATBWEATHER using `pipx`:
+```
+pipx install git+https://github.com/Anantaboga/atbweather.git
+```
+Run:
+```
+atbweather -l Tokyo
+```
+### 🧪 Option B — Virtual Environment (Development Use)
+Create venv:
+```
+python3 -m venv venv
+source venv/bin/activate
+```
+Install ATBWEATHER in editable mode:
+```
+pip install git+https://github.com/Anantaboga/atbweather.git
+```
+Run:
+```
+atbweather -l Tokyo
+```
+Deactivate when done:
+```
+deactivate
+```
