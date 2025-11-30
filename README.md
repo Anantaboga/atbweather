@@ -32,6 +32,10 @@ Easy to use anywhere.
 ```bash
 pip install git+https://github.com/Anantaboga/atbweather.git
 ```
+or in linux terminal:
+```
+pipx install git+https://github.com/Anantaboga/atbweather.git
+```
 ### Or with pipx (best for CLI apps):
 ```
 pip install --user pipx
@@ -57,3 +61,4 @@ atbweather -h
 ## 🧩 Requirements
 - Python 3.9+
 - Internet connection
+
