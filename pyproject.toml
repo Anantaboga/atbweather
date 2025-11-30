@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "atbweather"
+version = "0.1.0"
+description = "Tiny terminal weather app using wttr.in"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+authors = [
+  { name = "Anantaboga" }
+]
+
+dependencies = [
+  "requests>=2.0"
+]
+
+[project.scripts]
+atbweather = "atbweather.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/Anantaboga/atbweather"
+
